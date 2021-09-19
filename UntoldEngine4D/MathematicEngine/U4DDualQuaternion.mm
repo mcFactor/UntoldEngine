@@ -165,8 +165,8 @@ U4DDualQuaternion U4DDualQuaternion::normalize(){
     
     if (mag>0.000001) {
         
-        q.qReal*=1/mag;
-        q.qPure*=1/mag;
+        q.qReal*=1.0/mag;
+        q.qPure*=1.0/mag;
         
     }
     
@@ -185,7 +185,7 @@ U4DQuaternion U4DDualQuaternion::getPureQuaternionPart(){
     
     U4DQuaternion rConj=qReal.conjugate();
     
-    U4DQuaternion t=qPure*2*rConj;
+    U4DQuaternion t=qPure*2.0*rConj;
     
     return t;
 }

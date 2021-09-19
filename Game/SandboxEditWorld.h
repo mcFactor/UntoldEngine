@@ -17,7 +17,8 @@ class SandboxEditWorld:public U4DEngine::U4DWorld {
     
 private:
     
-    
+    U4DEngine::U4DModel *rightFoot;
+    U4DEngine::U4DModel *player;
 public:
     
     SandboxEditWorld();

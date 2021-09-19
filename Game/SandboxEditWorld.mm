@@ -113,26 +113,6 @@ void SandboxEditWorld::init(){
 
     
 
-//    //Line 3. Load attribute (rendering information) into the game entity
-//    if (player->loadModel("player0")) {
-//
-//        player->setPipeline("testPipeline");
-//
-////        U4DEngine::U4DDynamicAction *kineticAction=new U4DDynamicAction(player);
-////
-////        kineticAction->enableKineticsBehavior();
-////
-////        kineticAction->enableCollisionBehavior();
-//
-//        //Line 4. Load rendering information into the GPU
-//        player->loadRenderingInformation();
-//
-//        //Line 5. Add astronaut to the scenegraph
-//        addChild(player);
-//
-//        //player->translateBy(0.0, 10.0, 0.0);
-//
-//    }
     
 //    //Create an instance of U4DGameObject type
 //    U4DEngine::U4DModel *ground=new U4DEngine::U4DModel();
@@ -164,6 +144,7 @@ void SandboxEditWorld::init(){
 
 
 void SandboxEditWorld::update(double dt){
+    
     
 }
 

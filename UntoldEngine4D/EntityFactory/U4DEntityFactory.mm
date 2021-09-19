@@ -51,7 +51,7 @@ std::vector<std::string> U4DEntityFactory::getRegisteredClasses(){
     return registeredClassesContainer;
 }
 
-void U4DEntityFactory::createModelInstance(std::string uAssetName, std::string uModelName, std::string uType){
+void U4DEntityFactory::createModelInstance(std::string uAssetName, std::string uModelName, std::string uType, std::string uParentName){
     
     U4DLogger *logger=U4DLogger::sharedInstance();
     U4DVisibilityDictionary *visibilityDictionary=U4DVisibilityDictionary::sharedInstance();
@@ -64,16 +64,24 @@ void U4DEntityFactory::createModelInstance(std::string uAssetName, std::string u
     U4DWorld *world=scene->getGameWorld();
     U4DModel *model=createAction(uType);
     
+    U4DEntity *parentEntity;
+    if (uParentName.compare("world")==0) {
+        parentEntity=world;
+    }else{
+        parentEntity=world->searchChild(uParentName);
+    }
+    
+    
     bool modelDataLoaded=false;
 
-    if (model!=nullptr) {
+    if (model!=nullptr && parentEntity!=nullptr) {
         
         if(uType.compare("U4DModel")==0){
 
             if (model->loadModel(uAssetName.c_str())) {
                 
                 model->loadRenderingInformation();
-                world->addChild(model);
+                parentEntity->addChild(model);
                 modelDataLoaded=true;
             }
 
@@ -81,7 +89,7 @@ void U4DEntityFactory::createModelInstance(std::string uAssetName, std::string u
 
             if (model->init(uAssetName.c_str())) {
                 
-                world->addChild(model);
+                parentEntity->addChild(model);
                 modelDataLoaded=true;
             }
 

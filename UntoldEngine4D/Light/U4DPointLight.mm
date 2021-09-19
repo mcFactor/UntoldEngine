@@ -15,7 +15,7 @@ namespace U4DEngine{
     U4DPointLight* U4DPointLight::instance=0;
 
     U4DPointLight::U4DPointLight(){
-               
+        setEntityType(U4DEngine::LIGHT);
     };
 
     U4DPointLight::~U4DPointLight(){

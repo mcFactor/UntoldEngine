@@ -44,7 +44,7 @@ public:
     
     std::vector<std::string> getRegisteredClasses();
     
-    void createModelInstance(std::string uAssetName, std::string uModelName, std::string uType);
+    void createModelInstance(std::string uAssetName, std::string uModelName, std::string uType, std::string uParentName);
     
     void createModelInstance(std::string uAssetName, std::string uModelName, std::string uType, U4DVector3n uPosition, U4DVector3n uOrientation);
     

@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 #include "U4DEntity.h"
 #include "U4DVisibleEntity.h"
 #include "U4DVertexData.h"
@@ -176,6 +177,9 @@ public:
     void receiveUserInputUpdate(void *uData);
 
     void removeAllModelChildren();
+    
+    std::vector<std::string> getNamesOfEntitiesInScenegraph();
+    
 };
     
 }

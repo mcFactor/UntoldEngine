@@ -68,6 +68,7 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
     static U4DEntity *activeChild=nullptr;
     static std::string assetSelectedName;
     static std::string assetSelectedTypeName;
+    static std::string parentEntitySelectedTypeName;
     static std::string scriptFilePathName;
     static std::string scriptFilePath;
     
@@ -100,8 +101,10 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
     U4DVector3n childPosition;
     U4DVector3n childOrientation;
 
-    static float entityPosition[3];
-    static float entityOrientation[3];
+    static float entityAbsolutePosition[3];
+    static float entityAbsoluteOrientation[3];
+    static float entityLocalPosition[3];
+    static float entityLocalOrientation[3];
     
     
     float fps=director->getFPS();
@@ -214,16 +217,29 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                 
                 mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
                 
+                //load up local position
+                childPosition=activeChild->getLocalPosition();
+                childOrientation=activeChild->getLocalOrientation();
+                
+                entityLocalPosition[0] = childPosition.x;
+                entityLocalPosition[1] = childPosition.y;
+                entityLocalPosition[2] = childPosition.z;
+
+                entityLocalOrientation[0]=childOrientation.x;
+                entityLocalOrientation[1]=childOrientation.y;
+                entityLocalOrientation[2]=childOrientation.z;
+                
+                //get absolute position
                 childPosition=activeChild->getAbsolutePosition();
                 childOrientation=activeChild->getAbsoluteOrientation();
+                
+                entityAbsolutePosition[0] = childPosition.x;
+                entityAbsolutePosition[1] = childPosition.y;
+                entityAbsolutePosition[2] = childPosition.z;
 
-                entityPosition[0] = childPosition.x;
-                entityPosition[1] = childPosition.y;
-                entityPosition[2] = childPosition.z;
-
-                entityOrientation[0]=childOrientation.x;
-                entityOrientation[1]=childOrientation.y;
-                entityOrientation[2]=childOrientation.z;
+                entityAbsoluteOrientation[0]=childOrientation.x;
+                entityAbsoluteOrientation[1]=childOrientation.y;
+                entityAbsoluteOrientation[2]=childOrientation.z;
                 
             }
             
@@ -480,19 +496,32 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                      if (ImGui::Selectable(buf,activeChild==child)) {
                          
                          mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-                         
+
                          activeChild=child;
                          
+                         //local position
+                         childPosition=activeChild->getLocalPosition();
+                         childOrientation=activeChild->getLocalOrientation();
+                         
+                         entityLocalPosition[0] = childPosition.x;
+                         entityLocalPosition[1] = childPosition.y;
+                         entityLocalPosition[2] = childPosition.z;
+
+                         entityLocalOrientation[0]=childOrientation.x;
+                         entityLocalOrientation[1]=childOrientation.y;
+                         entityLocalOrientation[2]=childOrientation.z;
+                         
+                         //active position
                          childPosition=activeChild->getAbsolutePosition();
                          childOrientation=activeChild->getAbsoluteOrientation();
-
-                         entityPosition[0] = childPosition.x;
-                         entityPosition[1] = childPosition.y;
-                         entityPosition[2] = childPosition.z;
                          
-                         entityOrientation[0]=childOrientation.x;
-                         entityOrientation[1]=childOrientation.y;
-                         entityOrientation[2]=childOrientation.z;
+                         entityAbsolutePosition[0] = childPosition.x;
+                         entityAbsolutePosition[1] = childPosition.y;
+                         entityAbsolutePosition[2] = childPosition.z;
+
+                         entityAbsoluteOrientation[0]=childOrientation.x;
+                         entityAbsoluteOrientation[1]=childOrientation.y;
+                         entityAbsoluteOrientation[2]=childOrientation.z;
                          
                          break;
                      }
@@ -517,12 +546,25 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                     ImGui::Text("Entity Name: %s",activeChild->getName().c_str());
 
                     ImGui::Text("Transform");
-                    ImGui::SliderFloat3("Position", (float*)&entityPosition,-20.0,20.0);
-                    ImGui::SliderFloat3("Orientation", (float*)&entityOrientation,-180.0,180.0);
+                    
+                    ImGui::SliderFloat3("Position", (float*)&entityAbsolutePosition,-20.0,20.0);
+                    ImGui::SliderFloat3("Orientation", (float*)&entityAbsoluteOrientation,-180.0,180.0);
+                    
+                    if(!activeChild->parent->isRoot()){
+                        
+                        activeChild->translateTo(entityLocalPosition[0], entityLocalPosition[1], entityLocalPosition[2]);
+                        activeChild->rotateTo(entityLocalOrientation[0], entityLocalOrientation[1], entityLocalOrientation[2]);
 
-                    activeChild->translateTo(entityPosition[0], entityPosition[1], entityPosition[2]);
-                    activeChild->rotateTo(entityOrientation[0], entityOrientation[1], entityOrientation[2]);
+                        
+                    }else{
+                        
+                        activeChild->translateTo(entityAbsolutePosition[0], entityAbsolutePosition[1], entityAbsolutePosition[2]);
+                        activeChild->rotateTo(entityAbsoluteOrientation[0], entityAbsoluteOrientation[1], entityAbsoluteOrientation[2]);
 
+                    }
+                    
+                    
+                    
                     //Guizmo
                     {
                         
@@ -530,9 +572,7 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                            mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
                         if (ImGui::IsKeyPressed(82)) //r is pressed= rotate
                            mCurrentGizmoOperation = ImGuizmo::ROTATE;
-                          
-                
-                         static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
+                    
                              
                          U4DDirector *director=U4DDirector::sharedInstance();
                          U4DCamera *camera=U4DCamera::sharedInstance();
@@ -546,26 +586,48 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                         
                           U4DMatrix4n perspectiveProjection=director->getPerspectiveSpace();
                           
-                          U4DMatrix4n activeChildSpace=activeChild->getAbsoluteSpace().transformDualQuaternionToMatrix4n();
-                          
-                          ImGuizmo::Manipulate(cameraSpace.matrixData, perspectiveProjection.matrixData, mCurrentGizmoOperation, mCurrentGizmoMode, activeChildSpace.matrixData, NULL, NULL);
-                          
-                          
-                          float matrixTranslation[3], matrixRotation[3], matrixScale[3];
-                          ImGuizmo::DecomposeMatrixToComponents(activeChildSpace.matrixData, matrixTranslation, matrixRotation, matrixScale);
+                          U4DMatrix4n activeChildAbsoluteSpace=activeChild->getAbsoluteSpace().transformDualQuaternionToMatrix4n();
+                        
+                        float matrixAbsoluteTranslation[3], matrixAbsoluteRotation[3], matrixAbsoluteScale[3];
+                        
+                        ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
+                        
+                        if(!activeChild->parent->isRoot()){
+                            
+                            ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::LOCAL);
+                            
+                        }
+                        
+                        ImGuizmo::Manipulate(cameraSpace.matrixData, perspectiveProjection.matrixData, mCurrentGizmoOperation, mCurrentGizmoMode, activeChildAbsoluteSpace.matrixData, NULL, NULL);
+                        
+                        ImGuizmo::DecomposeMatrixToComponents(activeChildAbsoluteSpace.matrixData, matrixAbsoluteTranslation, matrixAbsoluteRotation, matrixAbsoluteScale);
                           
                         if (ImGuizmo::IsUsing()) {
                             
-                            entityPosition[0] = matrixTranslation[0];
-                            entityPosition[1] = matrixTranslation[1];
-                            entityPosition[2] = matrixTranslation[2];
-
-                            entityOrientation[0]=matrixRotation[0];
-                            entityOrientation[1]=matrixRotation[1];
-                            entityOrientation[2]=matrixRotation[2];
+                            //set the absolute position
                             
-                            activeChild->rotateTo(matrixRotation[0], matrixRotation[1], matrixRotation[2]);
-                            activeChild->translateTo(matrixTranslation[0], matrixTranslation[1], matrixTranslation[2]);
+                            entityAbsolutePosition[0] = matrixAbsoluteTranslation[0];
+                            entityAbsolutePosition[1] = matrixAbsoluteTranslation[1];
+                            entityAbsolutePosition[2] = matrixAbsoluteTranslation[2];
+
+                            entityAbsoluteOrientation[0]=matrixAbsoluteRotation[0];
+                            entityAbsoluteOrientation[1]=matrixAbsoluteRotation[1];
+                            entityAbsoluteOrientation[2]=matrixAbsoluteRotation[2];
+                            
+
+                            if(!activeChild->parent->isRoot()){
+                                
+                                activeChild->translateTo(entityLocalPosition[0], entityLocalPosition[1], entityLocalPosition[2]);
+                                activeChild->rotateTo(entityLocalOrientation[0], entityLocalOrientation[1], entityLocalOrientation[2]);
+                                
+                            }else{
+                                
+                                activeChild->translateTo(entityAbsolutePosition[0], entityAbsolutePosition[1], entityAbsolutePosition[2]);
+                                activeChild->rotateTo(entityAbsoluteOrientation[0], entityAbsoluteOrientation[1], entityAbsoluteOrientation[2]);
+                                
+                            }
+                            
+                            
                         }
                          
                     }
@@ -753,6 +815,39 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                         ImGui::EndCombo();
                     }
                     
+                    //section to set the parent of the entity
+                    
+                    ImGui::Text("Select Parent");
+                    
+                    U4DWorld *world=scene->getGameWorld();
+                    
+                    std::vector<std::string> itemsCurrentInScenegraph=world->getNamesOfEntitiesInScenegraph();
+                    
+                    static int item_current_Scenegraph_idx = (int)itemsCurrentInScenegraph.size()-1; // Here we store our selection data as an index.
+                    
+                    const char* combo_Parent_Entity_label = itemsCurrentInScenegraph.at(item_current_Scenegraph_idx).c_str();
+                    
+                    parentEntitySelectedTypeName=itemsCurrentInScenegraph.at(item_current_Scenegraph_idx).c_str();
+
+                    if(ImGui::BeginCombo("Parent",combo_Parent_Entity_label,flags)){
+
+                        for (int n = 0; n < itemsCurrentInScenegraph.size(); n++)
+                        {
+                            const bool is_selected = (item_current_Scenegraph_idx == n);
+                            if (ImGui::Selectable(itemsCurrentInScenegraph.at(n).c_str(), is_selected)){
+                                item_current_Scenegraph_idx = n;
+                                parentEntitySelectedTypeName=itemsCurrentInScenegraph.at(n);
+                            }
+                            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                            if (is_selected)
+                                ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                        
+                    }
+                    
+                    
+                    
                     if(ImGui::Button("load Assset")){
                     
                         if (scene!=nullptr) {
@@ -791,7 +886,7 @@ void U4DEditorPass::executePass(id <MTLCommandBuffer> uCommandBuffer, U4DEntity 
                             
                             std::string modelNameBuffer=assetSelectedName+"."+std::to_string(count);
                             
-                            entityFactory->createModelInstance(assetSelectedName,modelNameBuffer, assetSelectedTypeName);
+                            entityFactory->createModelInstance(assetSelectedName,modelNameBuffer, assetSelectedTypeName,parentEntitySelectedTypeName);
                             
                         }
                         

@@ -22,7 +22,12 @@ namespace U4DEngine {
     //constructor
     U4DWorld::U4DWorld():enableGrid(false){
         
+        setName("world");
+        
+        setEntityType(U4DEngine::WORLD);
+        
         entityManager=new U4DEntityManager();
+        
         entityManager->setRootEntity(this);
         
         renderEntity=new U4DRenderWorld(this);
@@ -182,6 +187,25 @@ namespace U4DEngine {
         prevSibling=this;
         lastDescendant=this;
         next=nullptr;
+    }
+
+    std::vector<std::string> U4DWorld::getNamesOfEntitiesInScenegraph(){
+        
+        std::vector<std::string> entityNames;
+        
+        U4DEntity *child=this;
+        
+        while (child!=nullptr) {
+            
+            if(child->getEntityType()==U4DEngine::MODEL  || child->getEntityType()==WORLD){
+                entityNames.push_back(child->getName().c_str());
+            }
+            
+            
+            child=child->next;
+        }
+        
+        return entityNames;
     }
 
 }
